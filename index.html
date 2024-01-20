@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        <button onclick="clickWithoutWorker()">Without Worker</button>
+        <button onclick="clickWithWorker()">With Worker</button>
+        <button onclick="clickWithWorkerDom()">Worker get object dom</button>
+    </div>
+    <div>
+        <button onclick="clickWithoutWorker()">Without Worker</button>
+        <button onclick="clickWithWorkerBroadcast()">With Worker Brodcast</button>
+        <button onclick="clickWithWorkerDomBroadcast()">Worker get object dom Brodcast</button>
+    </div>
+    <div>
+        <input type="text" />
+    </div>
+    <div>
+        <span type="text" id="result"></span>
+    </div>
+    <script>
+        const worker = new Worker("./js/worker.js");
+        worker.onmessage = function (event)  {
+            console.log('Received Worker listener', event.data);
+        }
+
+        function clickWithWorker() {
+            worker.postMessage({
+                message: "heavy-computation",
+                fn: stringifyFunction(heavyComputation)
+            })
+            console.log("can continue interaction")
+        }
+        function clickWithWorkerDom() {
+            worker.postMessage({
+                message: "request-dom-data",
+                requested: document.querySelector('button').getBoundingClientRect()
+            })
+        }
+        
+    </script>
+    <script>
+        const channel = new BroadcastChannel('sw-messages');
+        channel.onmessage = function (event) {
+            console.log('Received Broadcast', event);
+        }
+
+        function clickWithWorkerBroadcast() {
+            channel.postMessage({
+                message: "heavy-computation",
+                fn: stringifyFunction(heavyComputation)
+            })
+            console.log("can continue interaction")
+        }
+        function clickWithWorkerDomBroadcast() {
+            channel.postMessage({
+                message: "request-dom-data",
+                requested: document.querySelector('button').getBoundingClientRect()
+            })
+        }
+    </script>
+   
+    <script>
+        function clickWithoutWorker() {
+            heavyComputation()
+            console.log("can continue interaction")
+
+        }
+        function heavyComputation() {
+            for (let i = 0; i <= 20_000; i++) {
+                console.log(i)
+            }
+        }
+        function stringifyFunction (fn) {
+            return JSON.stringify(fn, function(key, value){
+				return (typeof value === 'function' ) ? value.toString() : value;
+			});
+        }
+    </script>
+</body>
+</html>
